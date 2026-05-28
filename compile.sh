@@ -1,0 +1,1 @@
+gcc bmp.c -Llib -l3man -o bmp
