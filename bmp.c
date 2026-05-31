@@ -1,7 +1,11 @@
 #include "includes/lib3man.h"
-#include <stddef.h>
-#include <stdio.h>
 
+typedef struct{
+    u8 * data;
+    u32 width;
+    u32 height;
+    u32 bit_depth;
+} Image;
 
 typedef struct{
     u16 seg;
@@ -13,6 +17,8 @@ typedef struct{
     u32 bps;
     u32 compression;
 } bmpheader;
+
+void ppm_write(Image img, const char * file_name);
 
 bmpheader bmp_get_header(Buffer buffer){
     bmpheader header = {0};
@@ -33,25 +39,36 @@ bmpheader bmp_get_header(Buffer buffer){
 int main(){
     
     Buffer buffer = buffer_read_file("test.bmp");
-
-
     // printf("\n%u", *(unsigned int *)buffer.buf);
     bmpheader header = bmp_get_header(buffer);
-    FILE * f = fopen("test.ppm", "wb");
-
     // u8 * data = (u8 *)(buffer.buf + 0x436);
     printf("%.2s, %u, %u \n", (char *)&header.seg, header.size, header.offset);
     printf("%d %d %u %u %x\n", header.width, header.height, header.bps, header.offset,header.compression);
-    for(size_t i = header.offset; i < header.offset + 817920; i++){
-        printf("%u \n", buffer.buf[i]);
+    Image img = {
+        .width = header.width, 
+        .height = header.height, 
+        .bit_depth = header.bps,
+        .data = &buffer.buf[header.offset]
+    };
+    ppm_write(img, "test.ppm");
+    return 0;
+}
+
+
+void ppm_write(Image img, const char * file_name){
+
+    FILE * f = fopen(file_name, "wb");
+
+    if(f == NULL){
+        printf("ERROR WRITING OPENNING THE PPM FILE\n");
+        return;
     }
-    // trying to write a ppm image to see how the bytes look
-    // P6
-    // 640 426
-    // 255
+
     fwrite("P6\n", 1, 3, f);
-    fwrite("640 426\n", 1, 8, f);
+    i8 buffer[24];
+    u32 len = snprintf((char *)buffer, 24, "%u %u\n", img.width, img.height);
+    fwrite(buffer, 1, len, f);
     fwrite("255\n", 1, 4, f);
-    // the bytes are flipped and pixels are inverted BGR instead of RGB
-    fwrite(&buffer.buf[header.offset], 1, 817920, f);
+    fwrite(img.data, 1, img.width * img.height * (img.bit_depth / 8), f);
+    fclose(f);
 }
