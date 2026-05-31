@@ -1,4 +1,5 @@
 #include "includes/lib3man.h"
+#include <stddef.h>
 
 typedef struct{
     u8 * data;
@@ -23,7 +24,6 @@ void ppm_write(Image img, const char * file_name);
 bmpheader bmp_get_header(Buffer buffer){
     bmpheader header = {0};
 
-
     header.seg = *(u16 *)buffer.buf;
     header.size = *(u32 *)(buffer.buf + 2);
     header.res = *(u32 *)(buffer.buf + 6);
@@ -44,11 +44,23 @@ int main(){
     // u8 * data = (u8 *)(buffer.buf + 0x436);
     printf("%.2s, %u, %u \n", (char *)&header.seg, header.size, header.offset);
     printf("%d %d %u %u %x\n", header.width, header.height, header.bps, header.offset,header.compression);
+    u8 *img_buff = malloc(817920);
+    size_t j = 817920;
+    for (size_t i = 0; i < header.height; i ++){
+        // img_buff[i] = buffer.buf[header.offset + j];
+        j -= (header.width * 3);
+        memcpy(&img_buff[i * (header.width * 3)], &buffer.buf[header.offset + j], header.width * 3);
+        // j--;
+        // img_buff[i + 1] = buffer.buf[header.offset + j];
+        // j--;
+        // img_buff[i + 2] = buffer.buf[header.offset + j];
+    }
     Image img = {
         .width = header.width, 
         .height = header.height, 
         .bit_depth = header.bps,
-        .data = &buffer.buf[header.offset]
+        // .data = &buffer.buf[header.offset]
+        .data = img_buff,
     };
     ppm_write(img, "test.ppm");
     return 0;
@@ -60,7 +72,7 @@ void ppm_write(Image img, const char * file_name){
     FILE * f = fopen(file_name, "wb");
 
     if(f == NULL){
-        printf("ERROR WRITING OPENNING THE PPM FILE\n");
+        printf("ERROR OPENNING THE PPM FILE\n");
         return;
     }
 
