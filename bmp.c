@@ -9,30 +9,35 @@ typedef struct{
 } Image;
 
 typedef struct{
-    u16 seg;
-    u32 size;
-    u32 res;
-    u32 offset;
+    u16 segniture;
+    u32 file_size;
+    u32 reserved;
+    u32 bit_map_offset;
+    u32 bmp_header_size;
     i32 width;
     i32 height;
-    u32 bps;
+    u32 planes;
+    u32 bits_per_pixel;
     u32 compression;
-} bmpheader;
+    u32 bitmap_data_size;
+} bmp_header;
 
 void ppm_write(Image img, const char * file_name);
 
-bmpheader bmp_get_header(Buffer buffer){
-    bmpheader header = {0};
+bmp_header bmp_get_header(Buffer buffer){
+    bmp_header header = {0};
 
-    header.seg = *(u16 *)buffer.buf;
-    header.size = *(u32 *)(buffer.buf + 2);
-    header.res = *(u32 *)(buffer.buf + 6);
-    header.offset = *(u32 *)(buffer.buf + 10);
-    header.width = *(i32 *)(buffer.buf + 18);
-    header.height = *(i32 *)(buffer.buf + 22);
-    header.bps = *(u32 *)(buffer.buf + 0x1c);
-    header.compression = *(i32 *)(buffer.buf + 30);
-
+    header.segniture = *(u16 *)buffer.buf;
+    header.file_size = *(u32 *)(buffer.buf + 0x2);
+    header.reserved = *(u32 *)(buffer.buf + 0x6);
+    header.bit_map_offset = *(u32 *)(buffer.buf + 0xa);
+    header.bmp_header_size = *(u32 *)(buffer.buf + 0xe);
+    header.width = *(i32 *)(buffer.buf + 0x12);
+    header.height = *(i32 *)(buffer.buf + 0x16);
+    header.planes = *(u32 *)(buffer.buf + 0x1a);
+    header.bits_per_pixel = *(u32 *)(buffer.buf + 0x1c);
+    header.compression = *(u32 *)(buffer.buf + 0x1e);
+    header.bitmap_data_size = *(u32 *)(buffer.buf + 0x22);
     return header;
 }
 
@@ -40,10 +45,10 @@ int main(){
     
     Buffer buffer = buffer_read_file("test.bmp");
     // printf("\n%u", *(unsigned int *)buffer.buf);
-    bmpheader header = bmp_get_header(buffer);
+    bmp_header header = bmp_get_header(buffer);
     // u8 * data = (u8 *)(buffer.buf + 0x436);
-    printf("%.2s, %u, %u \n", (char *)&header.seg, header.size, header.offset);
-    printf("%d %d %u %u %x\n", header.width, header.height, header.bps, header.offset,header.compression);
+    printf("%.2s, %u, %u \n", (char *)&header.segniture, header.file_size, header.bit_map_offset);
+    printf("%d %d %u %u %x\n", header.width, header.height, header.bits_per_pixel, header.bit_map_offset,header.compression);
     u8 *img_buff = malloc(817920);
 
     size_t j = 817920;
@@ -51,12 +56,12 @@ int main(){
     for (size_t i = 0; i < header.height; i ++){
         // img_buff[i] = buffer.buf[header.offset + j];
         j -= (header.width * 3);
-        memcpy(&img_buff[i * (header.width * 3)], &buffer.buf[header.offset + j], header.width * 3);
+        memcpy(&img_buff[i * (header.width * 3)], &buffer.buf[header.bit_map_offset + j], header.width * 3);
 
     }
 
     // from BGR to RGB
-    for(size_t i = 0; i < header.width * header.height * (header.bps/ 8); i += 3){
+    for(size_t i = 0; i < header.width * header.height * (header.bits_per_pixel/ 8); i += 3){
         u8 temp = img_buff[i];
         img_buff[i] = img_buff[i + 2];
         img_buff[i + 2] = temp;
@@ -65,7 +70,7 @@ int main(){
     Image img = {
         .width = header.width, 
         .height = header.height, 
-        .bit_depth = header.bps,
+        .bit_depth = header.bits_per_pixel,
         // .data = &buffer.buf[header.offset]
         .data = img_buff,
     };
