@@ -45,16 +45,23 @@ int main(){
     printf("%.2s, %u, %u \n", (char *)&header.seg, header.size, header.offset);
     printf("%d %d %u %u %x\n", header.width, header.height, header.bps, header.offset,header.compression);
     u8 *img_buff = malloc(817920);
+
     size_t j = 817920;
+    // fliping the image
     for (size_t i = 0; i < header.height; i ++){
         // img_buff[i] = buffer.buf[header.offset + j];
         j -= (header.width * 3);
         memcpy(&img_buff[i * (header.width * 3)], &buffer.buf[header.offset + j], header.width * 3);
-        // j--;
-        // img_buff[i + 1] = buffer.buf[header.offset + j];
-        // j--;
-        // img_buff[i + 2] = buffer.buf[header.offset + j];
+
     }
+
+    // from BGR to RGB
+    for(size_t i = 0; i < header.width * header.height * (header.bps/ 8); i += 3){
+        u8 temp = img_buff[i];
+        img_buff[i] = img_buff[i + 2];
+        img_buff[i + 2] = temp;
+    }
+
     Image img = {
         .width = header.width, 
         .height = header.height, 
@@ -62,6 +69,7 @@ int main(){
         // .data = &buffer.buf[header.offset]
         .data = img_buff,
     };
+    
     ppm_write(img, "test.ppm");
     return 0;
 }
