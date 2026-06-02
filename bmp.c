@@ -1,5 +1,8 @@
 #include "includes/lib3man.h"
+#include <assert.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 
 typedef struct{
     u8 * data;
@@ -28,6 +31,7 @@ typedef struct{
 } bmp_header;
 
 void ppm_write(Image img, const char * file_name);
+void bmp_write(Image img, const char * file_name);
 
 bmp_header bmp_get_header(Buffer buffer){
     bmp_header header = {0};
@@ -48,6 +52,7 @@ bmp_header bmp_get_header(Buffer buffer){
     header.colors = *(u32 *)(buffer.buf + 0x2e);
     header.important_colors = *(u32 *)(buffer.buf + 0x32);
     header.palette = *(u32 *)(buffer.buf + 0x36);
+
     return header;
 }
 
@@ -86,6 +91,7 @@ int main(){
     };
     
     ppm_write(img, "test.ppm");
+    bmp_write(img, "test2.bmp");
     return 0;
 }
 
@@ -108,6 +114,53 @@ void ppm_write(Image img, const char * file_name){
     fclose(f);
 }
 
-void bmp_write(Image img){
+void bmp_write(Image img, const char * file_name){
     // TODO : FINISH THIS 
+    assert(img.data != NULL && img.width > 0
+        && img.width > 0 && img.bit_depth > 0
+    );
+    u8 padding = (img.width * img.height / (img.bit_depth / 8) ) % 4;
+    printf("padding %u\n", padding);
+    FILE * bitmp_file = fopen(file_name, "wb");
+
+    if(bitmp_file == NULL ){
+        printf("BMP FILE WRITING/OPENNING FAILED\n");
+        return;
+    }
+    // signiture
+    fwrite("BM", 1, 2, bitmp_file);
+    // file_size
+    u32 file_size = 54 + ((img.width * img.height) * (img.bit_depth / 8) + (padding * img.height) );
+    fwrite(&file_size, 4, 1, bitmp_file);
+    // reserved 
+    u32 res = 0;
+    fwrite(&res, 4, 1, bitmp_file);
+    // byte offset 
+    u32 boff = 54;
+    fwrite(&boff, 4, 1, bitmp_file);
+    // size of the header
+    u32 sfh = 40;
+    fwrite(&sfh, 4, 1, bitmp_file);
+    // width 
+    fwrite(&img.width, 4, 1, bitmp_file);
+    //heigt
+    i32 height = -img.height;
+    fwrite(&height, 4, 1, bitmp_file);
+    //planes
+    u16 planes= 1;
+    fwrite(&planes, 2, 1, bitmp_file);
+    //bit count
+    fwrite(&img.bit_depth, 2, 1, bitmp_file);
+    // end of  header 
+    u32 fill = 0;
+    fwrite(&fill, 4, 6, bitmp_file);
+    for(size_t i = 0; i < img.height * (img.bit_depth  / 8); i++){
+        u8 * data = &img.data[img.width * i];
+        fwrite(data, img.width, 1, bitmp_file);
+        if(padding > 0)
+            fwrite(&fill, 1, padding, bitmp_file);
+
+    }
+
+    fclose(bitmp_file);
 }
