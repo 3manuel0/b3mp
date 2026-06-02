@@ -16,10 +16,15 @@ typedef struct{
     u32 bmp_header_size;
     i32 width;
     i32 height;
-    u32 planes;
-    u32 bits_per_pixel;
+    u16 planes;
+    u16 bits_per_pixel;
     u32 compression;
     u32 bitmap_data_size;
+    u32 hresolution;
+    u32 vresolution;
+    u32 colors;
+    u32 important_colors;
+    u32 palette;
 } bmp_header;
 
 void ppm_write(Image img, const char * file_name);
@@ -34,10 +39,15 @@ bmp_header bmp_get_header(Buffer buffer){
     header.bmp_header_size = *(u32 *)(buffer.buf + 0xe);
     header.width = *(i32 *)(buffer.buf + 0x12);
     header.height = *(i32 *)(buffer.buf + 0x16);
-    header.planes = *(u32 *)(buffer.buf + 0x1a);
-    header.bits_per_pixel = *(u32 *)(buffer.buf + 0x1c);
+    header.planes = *(u16 *)(buffer.buf + 0x1a);
+    header.bits_per_pixel = *(u16 *)(buffer.buf + 0x1c);
     header.compression = *(u32 *)(buffer.buf + 0x1e);
     header.bitmap_data_size = *(u32 *)(buffer.buf + 0x22);
+    header.hresolution = *(u32 *)(buffer.buf + 0x26);
+    header.vresolution = *(u32 *)(buffer.buf + 0x2a);
+    header.colors = *(u32 *)(buffer.buf + 0x2e);
+    header.important_colors = *(u32 *)(buffer.buf + 0x32);
+    header.palette = *(u32 *)(buffer.buf + 0x36);
     return header;
 }
 
@@ -96,4 +106,8 @@ void ppm_write(Image img, const char * file_name){
     fwrite("255\n", 1, 4, f);
     fwrite(img.data, 1, img.width * img.height * (img.bit_depth / 8), f);
     fclose(f);
+}
+
+void bmp_write(Image img){
+    // TODO : FINISH THIS 
 }
