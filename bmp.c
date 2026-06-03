@@ -1,8 +1,4 @@
 #include "includes/lib3man.h"
-#include <assert.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
 
 typedef struct{
     u8 * data;
@@ -16,7 +12,10 @@ typedef struct{
     u32 file_size;
     u32 reserved;
     u32 bit_map_offset;
-    u32 bmp_header_size;
+} bmp_file_header;
+
+typedef struct{
+    u32 dip_header_size;
     i32 width;
     i32 height;
     u16 planes;
@@ -28,50 +27,55 @@ typedef struct{
     u32 colors;
     u32 important_colors;
     u32 palette;
-} bmp_header;
+}bmp_dip_header;
 
 void ppm_write(Image img, const char * file_name);
 void bmp_write(Image img, const char * file_name);
 
-bmp_header bmp_get_header(Buffer buffer){
-    bmp_header header = {0};
+bmp_file_header bmp_get_file_header(Buffer buffer){
+    bmp_file_header file_header = {0};
+    file_header.segniture = *(u16 *)buffer.buf;
+    file_header.file_size = *(u32 *)(buffer.buf + 0x2);
+    file_header.reserved = *(u32 *)(buffer.buf + 0x6);
+    file_header.bit_map_offset = *(u32 *)(buffer.buf + 0xa);
+    return file_header;
+}
 
-    header.segniture = *(u16 *)buffer.buf;
-    header.file_size = *(u32 *)(buffer.buf + 0x2);
-    header.reserved = *(u32 *)(buffer.buf + 0x6);
-    header.bit_map_offset = *(u32 *)(buffer.buf + 0xa);
-    header.bmp_header_size = *(u32 *)(buffer.buf + 0xe);
-    header.width = *(i32 *)(buffer.buf + 0x12);
-    header.height = *(i32 *)(buffer.buf + 0x16);
-    header.planes = *(u16 *)(buffer.buf + 0x1a);
-    header.bits_per_pixel = *(u16 *)(buffer.buf + 0x1c);
-    header.compression = *(u32 *)(buffer.buf + 0x1e);
-    header.bitmap_data_size = *(u32 *)(buffer.buf + 0x22);
-    header.hresolution = *(u32 *)(buffer.buf + 0x26);
-    header.vresolution = *(u32 *)(buffer.buf + 0x2a);
-    header.colors = *(u32 *)(buffer.buf + 0x2e);
-    header.important_colors = *(u32 *)(buffer.buf + 0x32);
-    header.palette = *(u32 *)(buffer.buf + 0x36);
+bmp_dip_header bmp_get_dip_header(Buffer buffer){
+    bmp_dip_header dip_header = {0};
+    dip_header.dip_header_size = *(u32 *)(buffer.buf + 0xe);
+    dip_header.width = *(i32 *)(buffer.buf + 0x12);
+    dip_header.height = *(i32 *)(buffer.buf + 0x16);
+    dip_header.planes = *(u16 *)(buffer.buf + 0x1a);
+    dip_header.bits_per_pixel = *(u16 *)(buffer.buf + 0x1c);
+    dip_header.compression = *(u32 *)(buffer.buf + 0x1e);
+    dip_header.bitmap_data_size = *(u32 *)(buffer.buf + 0x22);
+    dip_header.hresolution = *(u32 *)(buffer.buf + 0x26);
+    dip_header.vresolution = *(u32 *)(buffer.buf + 0x2a);
+    dip_header.colors = *(u32 *)(buffer.buf + 0x2e);
+    dip_header.important_colors = *(u32 *)(buffer.buf + 0x32);
+    dip_header.palette = *(u32 *)(buffer.buf + 0x36);
 
-    return header;
+    return dip_header;
 }
 
 int main(){
     
     Buffer buffer = buffer_read_file("test.bmp");
     // printf("\n%u", *(unsigned int *)buffer.buf);
-    bmp_header header = bmp_get_header(buffer);
+    bmp_file_header fheader = bmp_get_file_header(buffer);
+    bmp_dip_header header = bmp_get_dip_header(buffer);
     // u8 * data = (u8 *)(buffer.buf + 0x436);
-    printf("%.2s, %u, %u \n", (char *)&header.segniture, header.file_size, header.bit_map_offset);
-    printf("%d %d %u %u %x\n", header.width, header.height, header.bits_per_pixel, header.bit_map_offset,header.compression);
-    u8 *img_buff = malloc(817920);
+    // printf("%.2s, %u, %u \n", (char *)&header.segniture, header.file_size, header.bit_map_offset);
+    printf("%d %d %u %u %x\n", header.width, header.height, header.bits_per_pixel, fheader.bit_map_offset,header.compression);
+    u8 *img_buff = malloc(header.width * header.height * (header.bits_per_pixel / 8));
 
-    size_t j = 817920;
+    size_t j = header.width * header.height * (header.bits_per_pixel / 8);
     // fliping the image
     for (size_t i = 0; i < header.height; i ++){
         // img_buff[i] = buffer.buf[header.offset + j];
         j -= (header.width * 3);
-        memcpy(&img_buff[i * (header.width * 3)], &buffer.buf[header.bit_map_offset + j], header.width * 3);
+        memcpy(&img_buff[i * (header.width * 3)], &buffer.buf[fheader.bit_map_offset + j], header.width * 3);
 
     }
 
@@ -165,13 +169,22 @@ void bmp_write(Image img, const char * file_name){
     }
 
     // saving the image with flipped rows top -> bottom
-    for(size_t i = img.height; i > 0; i--){
+    for(size_t i = img.height; i > 0; ){
+        i--;
         u8 * data = &img.data[img.width * i * bytes_per_pixel];
         fwrite(data, img.width * bytes_per_pixel, 1, bitmp_file);
         if(padding > 0)
             fwrite(&fill, 1, padding, bitmp_file);
 
     }
+
+    // for(size_t i = 0; i < img.height; i++){
+    //     u8 * data = &img.data[img.width * i * bytes_per_pixel];
+    //     fwrite(data, img.width * bytes_per_pixel, 1, bitmp_file);
+    //     if(padding > 0)
+    //         fwrite(&fill, 1, padding, bitmp_file);
+
+    // }
 
     fclose(bitmp_file);
 }
