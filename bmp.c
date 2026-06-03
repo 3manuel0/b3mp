@@ -115,11 +115,13 @@ void ppm_write(Image img, const char * file_name){
 }
 
 void bmp_write(Image img, const char * file_name){
-    // TODO : FINISH THIS 
+
     assert(img.data != NULL && img.width > 0
         && img.width > 0 && img.bit_depth > 0
     );
-    u8 padding = (img.width * img.height / (img.bit_depth / 8) ) % 4;
+    u8 bytes_per_pixel = (img.bit_depth / 8);
+    u8 padding = (img.width * img.height / bytes_per_pixel ) % 4;
+    u32 img_data_size = img.width * img.height * bytes_per_pixel;
     printf("padding %u\n", padding);
     FILE * bitmp_file = fopen(file_name, "wb");
 
@@ -144,7 +146,7 @@ void bmp_write(Image img, const char * file_name){
     // width 
     fwrite(&img.width, 4, 1, bitmp_file);
     //heigt
-    i32 height = -img.height;
+    i32 height = img.height;
     fwrite(&height, 4, 1, bitmp_file);
     //planes
     u16 planes= 1;
@@ -154,9 +156,18 @@ void bmp_write(Image img, const char * file_name){
     // end of  header 
     u32 fill = 0;
     fwrite(&fill, 4, 6, bitmp_file);
-    for(size_t i = 0; i < img.height * (img.bit_depth  / 8); i++){
-        u8 * data = &img.data[img.width * i];
-        fwrite(data, img.width, 1, bitmp_file);
+
+    // from GBR TO RGB or GBRA TO RGBA 
+    for(size_t i = 0; i < img_data_size; i += bytes_per_pixel){
+        u8 temp = img.data[i];
+        img.data[i] = img.data[i + 2];
+        img.data[i + 2] = temp;
+    }
+
+    // saving the image with flipped rows top -> bottom
+    for(size_t i = img.height; i > 0; i--){
+        u8 * data = &img.data[img.width * i * bytes_per_pixel];
+        fwrite(data, img.width * bytes_per_pixel, 1, bitmp_file);
         if(padding > 0)
             fwrite(&fill, 1, padding, bitmp_file);
 
