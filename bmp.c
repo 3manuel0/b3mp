@@ -41,6 +41,7 @@ bmp_file_header bmp_get_file_header(Buffer buffer){
     return file_header;
 }
 
+// this is onlt one dip header type handle more 
 bmp_dip_header bmp_get_dip_header(Buffer buffer){
     bmp_dip_header dip_header = {0};
     dip_header.dip_header_size = *(u32 *)(buffer.buf + 0xe);
@@ -139,7 +140,8 @@ void bmp_write(Image img, const char * file_name){
     u32 file_size = 54 + ((img.width * img.height) * (img.bit_depth / 8) + (padding * img.height) );
     fwrite(&file_size, 4, 1, bitmp_file);
     // reserved 
-    u32 res = 0;
+    char * s = "3MAN";//my signature
+    u32 res = *(u32 *)s;
     fwrite(&res, 4, 1, bitmp_file);
     // byte offset 
     u32 boff = 54;
