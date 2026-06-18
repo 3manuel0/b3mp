@@ -32,30 +32,30 @@ typedef struct{
 void ppm_write(Image img, const char * file_name);
 void bmp_write(Image img, const char * file_name);
 
-bmp_file_header bmp_get_file_header(Buffer buffer){
+bmp_file_header bmp_get_file_header(Buffer * buffer){
     bmp_file_header file_header = {0};
-    file_header.segniture = *(u16 *)buffer.buf;
-    file_header.file_size = *(u32 *)(buffer.buf + 0x2);
-    file_header.reserved = *(u32 *)(buffer.buf + 0x6);
-    file_header.bit_map_offset = *(u32 *)(buffer.buf + 0xa);
+    file_header.segniture = *(u16 *)buffer_get_next_sz(buffer, sizeof(u16));//*(u16 *)buffer.buf;
+    file_header.file_size = *(u32 *)buffer_get_next_sz(buffer, sizeof(u32));//*(u32 *)(buffer.buf + 0x2);
+    file_header.reserved = *(u32 *)buffer_get_next_sz(buffer, sizeof(u32));//*(u32 *)(buffer.buf + 0x6);
+    file_header.bit_map_offset = *(u32 *)buffer_get_next_sz(buffer, sizeof(u32));//*(u32 *)(buffer.buf + 0xa);
     return file_header;
 }
 
 // this is onlt one dip header type handle more 
-bmp_dip_header bmp_get_dip_header(Buffer buffer){
+bmp_dip_header bmp_get_dip_header(Buffer * buffer){
     bmp_dip_header dip_header = {0};
-    dip_header.dip_header_size = *(u32 *)(buffer.buf + 0xe);
-    dip_header.width = *(i32 *)(buffer.buf + 0x12);
-    dip_header.height = *(i32 *)(buffer.buf + 0x16);
-    dip_header.planes = *(u16 *)(buffer.buf + 0x1a);
-    dip_header.bits_per_pixel = *(u16 *)(buffer.buf + 0x1c);
-    dip_header.compression = *(u32 *)(buffer.buf + 0x1e);
-    dip_header.bitmap_data_size = *(u32 *)(buffer.buf + 0x22);
-    dip_header.hresolution = *(u32 *)(buffer.buf + 0x26);
-    dip_header.vresolution = *(u32 *)(buffer.buf + 0x2a);
-    dip_header.colors = *(u32 *)(buffer.buf + 0x2e);
-    dip_header.important_colors = *(u32 *)(buffer.buf + 0x32);
-    dip_header.palette = *(u32 *)(buffer.buf + 0x36);
+    dip_header.dip_header_size = *(u32 *)buffer_get_next_sz(buffer, sizeof(u32));//*(u32 *)(buffer.buf + 0xe);
+    dip_header.width = *(u32 *)buffer_get_next_sz(buffer, sizeof(u32));//*(i32 *)(buffer.buf + 0x12);
+    dip_header.height = *(i32 *)buffer_get_next_sz(buffer, sizeof(i32));//*(i32 *)(buffer.buf + 0x16);
+    dip_header.planes = *(u16 *)buffer_get_next_sz(buffer, sizeof(u16));//*(u16 *)(buffer.buf + 0x1a);
+    dip_header.bits_per_pixel = *(u16 *)buffer_get_next_sz(buffer, sizeof(u16));//*(u16 *)(buffer.buf + 0x1c);
+    dip_header.compression = *(u32 *)buffer_get_next_sz(buffer, sizeof(u32));//*(u32 *)(buffer.buf + 0x1e);
+    dip_header.bitmap_data_size = *(u32 *)buffer_get_next_sz(buffer, sizeof(u32));//*(u32 *)(buffer.buf + 0x22);
+    dip_header.hresolution = *(u32 *)buffer_get_next_sz(buffer, sizeof(u32));//*(u32 *)(buffer.buf + 0x26);
+    dip_header.vresolution = *(u32 *)buffer_get_next_sz(buffer, sizeof(u32));//*(u32 *)(buffer.buf + 0x2a);
+    dip_header.colors = *(u32 *)buffer_get_next_sz(buffer, sizeof(u32));//*(u32 *)(buffer.buf + 0x2e);
+    dip_header.important_colors = *(u32 *)buffer_get_next_sz(buffer, sizeof(u32));//*(u32 *)(buffer.buf + 0x32);
+    dip_header.palette = *(u32 *)buffer_get_next_sz(buffer, sizeof(u32));//*(u32 *)(buffer.buf + 0x36);
 
     return dip_header;
 }
@@ -64,8 +64,8 @@ int main(){
     
     Buffer buffer = buffer_read_file("test.bmp");
     // printf("\n%u", *(unsigned int *)buffer.buf);
-    bmp_file_header fheader = bmp_get_file_header(buffer);
-    bmp_dip_header header = bmp_get_dip_header(buffer);
+    bmp_file_header fheader = bmp_get_file_header(&buffer);
+    bmp_dip_header header = bmp_get_dip_header(&buffer);
     // u8 * data = (u8 *)(buffer.buf + 0x436);
     // printf("%.2s, %u, %u \n", (char *)&header.segniture, header.file_size, header.bit_map_offset);
     printf("%d %d %u %u %x\n", header.width, header.height, header.bits_per_pixel, fheader.bit_map_offset,header.compression);
