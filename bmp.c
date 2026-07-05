@@ -105,6 +105,7 @@ int main(){
         img2.data[i] = 255;
     ppm_write(img, "test.ppm");
     bmp_write(img, "test2.bmp");
+    ppm_write(img2, "test3.ppm");
     bmp_write(img2, "test3.bmp");//generating a white bmp image
     return 0;
 }
