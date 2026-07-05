@@ -1,4 +1,5 @@
 #include "includes/lib3man.h"
+#include <stdlib.h>
 
 typedef struct{
     u8 * data;
@@ -94,9 +95,17 @@ int main(){
         // .data = &buffer.buf[header.offset]
         .data = img_buff,
     };
-    
+    // testing
+    Image img2 = {};
+    img2.data = malloc(800 * 600 * 4);
+    img2.bit_depth = 32;
+    img2.height = 600;
+    img2.width = 800;
+    for(size_t i = 0; i < img2.height * img2.width * (img2.bit_depth / 8); i++)
+        img2.data[i] = 255;
     ppm_write(img, "test.ppm");
     bmp_write(img, "test2.bmp");
+    bmp_write(img2, "test3.bmp");//generating a white bmp image
     return 0;
 }
 
@@ -109,7 +118,7 @@ void ppm_write(Image img, const char * file_name){
         printf("ERROR OPENNING THE PPM FILE\n");
         return;
     }
-
+    //P6 version
     fwrite("P6\n", 1, 3, f);
     i8 buffer[24];
     u32 len = snprintf((char *)buffer, 24, "%u %u\n", img.width, img.height);
@@ -140,7 +149,7 @@ void bmp_write(Image img, const char * file_name){
     u32 file_size = 54 + ((img.width * img.height) * (img.bit_depth / 8) + (padding * img.height) );
     fwrite(&file_size, 4, 1, bitmp_file);
     // reserved 
-    char * s = "3MAN";//my signature
+    char * s = "3MAN";//my signature to be hidden in the bmp
     u32 res = *(u32 *)s;
     fwrite(&res, 4, 1, bitmp_file);
     // byte offset 
