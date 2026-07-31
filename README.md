@@ -11,6 +11,7 @@ and turn them into image data, this could be useful for my machine learning libr
 
 #### NOTES
 
+- Add Handeling for all the DIP_header types.
 - This could eventually be part of [lib3man](https://github.com/3manuel0/lib3man)
 - I used PPM format, since needed a fast way to write an image to test things.
 - First I will handle the uncompressed formats then the easy ones, and I could create my own parser for PNG and JPEG evetually after.
