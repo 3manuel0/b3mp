@@ -1,37 +1,4 @@
-#include "includes/lib3man.h"
-#include <stdlib.h>
-
-typedef struct{
-    u8 * data;
-    u32 width;
-    u32 height;
-    u32 bit_depth;
-} Image;
-
-typedef struct{
-    u16 segniture;
-    u32 file_size;
-    u32 reserved;
-    u32 bit_map_offset;
-} bmp_file_header;
-
-typedef struct{
-    u32 dip_header_size;
-    i32 width;
-    i32 height;
-    u16 planes;
-    u16 bits_per_pixel;
-    u32 compression;
-    u32 bitmap_data_size;
-    u32 hresolution;
-    u32 vresolution;
-    u32 colors;
-    u32 important_colors;
-    u32 palette;
-}bmp_dip_header;
-
-void ppm_write(Image img, const char * file_name);
-void bmp_write(Image img, const char * file_name);
+#include "includes/bmp.h"
 
 bmp_file_header bmp_get_file_header(Buffer * buffer){
     bmp_file_header file_header = {0};
@@ -59,55 +26,6 @@ bmp_dip_header bmp_get_dip_header(Buffer * buffer){
     dip_header.palette = *(u32 *)buffer_get_next_sz(buffer, sizeof(u32));//*(u32 *)(buffer.buf + 0x36);
 
     return dip_header;
-}
-
-int main(){
-    
-    Buffer buffer = buffer_read_file("test.bmp");
-    // printf("\n%u", *(unsigned int *)buffer.buf);
-    bmp_file_header fheader = bmp_get_file_header(&buffer);
-    bmp_dip_header header = bmp_get_dip_header(&buffer);
-    // u8 * data = (u8 *)(buffer.buf + 0x436);
-    // printf("%.2s, %u, %u \n", (char *)&header.segniture, header.file_size, header.bit_map_offset);
-    printf("%d %d %u %u %x\n", header.width, header.height, header.bits_per_pixel, fheader.bit_map_offset,header.compression);
-    u8 *img_buff = malloc(header.width * header.height * (header.bits_per_pixel / 8));
-
-    size_t j = header.width * header.height * (header.bits_per_pixel / 8);
-    // fliping the image
-    for (size_t i = 0; i < header.height; i ++){
-        // img_buff[i] = buffer.buf[header.offset + j];
-        j -= (header.width * 3);
-        memcpy(&img_buff[i * (header.width * 3)], &buffer.buf[fheader.bit_map_offset + j], header.width * 3);
-
-    }
-
-    // from BGR to RGB
-    for(size_t i = 0; i < header.width * header.height * (header.bits_per_pixel/ 8); i += 3){
-        u8 temp = img_buff[i];
-        img_buff[i] = img_buff[i + 2];
-        img_buff[i + 2] = temp;
-    }
-
-    Image img = {
-        .width = header.width, 
-        .height = header.height, 
-        .bit_depth = header.bits_per_pixel,
-        // .data = &buffer.buf[header.offset]
-        .data = img_buff,
-    };
-    // testing
-    Image img2 = {};
-    img2.data = malloc(800 * 600 * 4);
-    img2.bit_depth = 32;
-    img2.height = 600;
-    img2.width = 800;
-    for(size_t i = 0; i < img2.height * img2.width * (img2.bit_depth / 8); i++)
-        img2.data[i] = 255;
-    ppm_write(img, "test.ppm");
-    bmp_write(img, "test2.bmp");
-    ppm_write(img2, "test3.ppm");
-    bmp_write(img2, "test3.bmp");//generating a white bmp image
-    return 0;
 }
 
 
