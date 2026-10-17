@@ -16,3 +16,4 @@ and turn them into image data, this could be useful for my machine learning libr
 - I used PPM format, since needed a fast way to write an image to test things.
 - First I will handle the uncompressed formats then the easy ones, and I could create my own parser for PNG and JPEG evetually after.
 - I will only be using the C standard library and [lib3man](https://github.com/3manuel0/lib3man).
+- Experimenting with puting files into images again.
