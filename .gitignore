@@ -1,3 +1,5 @@
 bmp
 *.bmp
 *.ppm
+main
+*.txt

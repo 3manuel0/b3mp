@@ -1,1 +1,3 @@
-gcc bmp.c -Llib -l3man -o bmp
+gcc main.c -Llib -l3man -o main
+
+gcc FileToImg.c -Llib -l3man -o FileToImg
