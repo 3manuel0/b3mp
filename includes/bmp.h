@@ -34,5 +34,6 @@ typedef struct{
 
 void ppm_write(Image img, const char * file_name);
 void bmp_write(Image img, const char * file_name);
+Image bmp_read(const char * file_name);
 
 #endif 

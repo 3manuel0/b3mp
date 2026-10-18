@@ -118,3 +118,42 @@ void bmp_write(Image img, const char * file_name){
 
     fclose(bitmp_file);
 }
+
+Image bmp_read(const char * file_name){
+
+    Buffer buffer = buffer_read_file(file_name);
+    // printf("\n%u", *(unsigned int *)buffer.buf);
+    bmp_file_header fheader = bmp_get_file_header(&buffer);
+    bmp_dip_header header = bmp_get_dip_header(&buffer);
+    // u8 * data = (u8 *)(buffer.buf + 0x436);
+    // printf("%.2s, %u, %u \n", (char *)&header.segniture, header.file_size, header.bit_map_offset);
+    printf("%d %d %u %u %x\n", header.width, header.height, header.bits_per_pixel, fheader.bit_map_offset,header.compression);
+    u8 *img_buff = malloc(header.width * header.height * (header.bits_per_pixel / 8));
+
+    size_t j = header.width * header.height * (header.bits_per_pixel / 8);
+    
+    // fliping the image
+    for (size_t i = 0; i < header.height; i ++){
+        // img_buff[i] = buffer.buf[header.offset + j];
+        j -= (header.width * 3);
+        memcpy(&img_buff[i * (header.width * 3)], &buffer.buf[fheader.bit_map_offset + j], header.width * 3);
+
+    }
+
+    // from BGR to RGB
+    for(size_t i = 0; i < header.width * header.height * (header.bits_per_pixel/ 8); i += 3){
+        u8 temp = img_buff[i];
+        img_buff[i] = img_buff[i + 2];
+        img_buff[i + 2] = temp;
+    }
+
+    Image img = {
+        .width = header.width, 
+        .height = header.height, 
+        .bit_depth = header.bits_per_pixel,
+        // .data = &buffer.buf[header.offset]
+        .data = img_buff,
+    };
+
+    return img;
+}

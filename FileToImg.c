@@ -1,6 +1,7 @@
 #include "includes/bmp.h"
 #include "bmp.c"
 #include "includes/lib3man.h"
+#include <stddef.h>
 #include <stdlib.h>
 
 i32 writeFileBmp();
@@ -66,6 +67,15 @@ i32 writeBmpFile(){
         newimg.data[i] = ext[i];
     }
 
+    newimg.data[i] = 0;
+    i++;
+    printf("i = %zu\n", i);
+
+    *(i32*)(&newimg.data[i]) = txt.size;
+    i += 4;
+
+    printf("i = %zu\n", i);
+
     for(size_t j = 0; j < txt.size; j++){
         newimg.data[i + j] = txt.buf[j];
     }
@@ -88,5 +98,13 @@ i32 writeBmpFile(){
     //     i++;
     // }
     // return file_size;
+    Image img = bmp_read("test.bmp");
+    printf("%p width = %u height = %u bdepth = %u\n",img.data, img.width, img.height, img.bit_depth);
+
+    // fix the bugs 
+    for(size_t t = 0; t < 4022/*img.height*img.width*4*/; t++){
+        // if(img.data[t] == 't')
+            printf("%zu %c\n", t, img.data[t]);
+    }
     return 0;
 }
